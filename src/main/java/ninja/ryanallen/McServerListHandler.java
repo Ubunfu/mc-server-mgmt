@@ -2,9 +2,9 @@ package ninja.ryanallen;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import ninja.ryanallen.entity.ServerInstance;
-import ninja.ryanallen.entity.ServerListRequest;
-import ninja.ryanallen.entity.ServerListResponse;
+import com.google.gson.Gson;
+import ninja.ryanallen.entity.*;
+import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.DescribeInstancesRequest;
@@ -14,9 +14,13 @@ import software.amazon.awssdk.services.ec2.model.Filter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class McServerListHandler implements RequestHandler<ServerListRequest, ServerListResponse> {
+public class McServerListHandler implements RequestHandler<ApiGatewayProxyRequest, ApiGatewayProxyResponse> {
     @Override
-    public ServerListResponse handleRequest(ServerListRequest serverListRequest, Context context) {
+    public ApiGatewayProxyResponse handleRequest(ApiGatewayProxyRequest proxyRequest, Context context) {
+
+        // Convert the Lambda proxy integration request body into a ServerListRequest
+        Gson gson = new Gson();
+        ServerListRequest serverListRequest = gson.fromJson(proxyRequest.getBody(), ServerListRequest.class);
 
         Ec2Client ec2Client = Ec2Client.builder()
                 .region(Region.of(serverListRequest.getRegion()))
@@ -44,6 +48,10 @@ public class McServerListHandler implements RequestHandler<ServerListRequest, Se
                             instance.publicDnsName()));
         }));
 
-        return new ServerListResponse(serverList);
+        // Build a new response entity
+        ServerListResponse resp = new ServerListResponse(serverList);
+
+        // Add that into the "body" of a proper Lambda Proxy Integration response object
+        return new ApiGatewayProxyResponse(false, HttpStatusCode.OK, gson.toJson(resp));
     }
 }
