@@ -12,7 +12,9 @@ import software.amazon.awssdk.services.ec2.model.DescribeInstancesResponse;
 import software.amazon.awssdk.services.ec2.model.Filter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class McServerListHandler implements RequestHandler<ApiGatewayProxyRequest, ApiGatewayProxyResponse> {
     @Override
@@ -51,7 +53,11 @@ public class McServerListHandler implements RequestHandler<ApiGatewayProxyReques
         // Build a new response entity
         ServerListResponse resp = new ServerListResponse(serverList);
 
+        // Set up the response headers (for CORS really...)
+        Map<String, String> respHeaders = new HashMap<>();
+        respHeaders.put("Access-Control-Allow-Origin", "https://eager-jang-9f2469.netlify.com");
+
         // Add that into the "body" of a proper Lambda Proxy Integration response object
-        return new ApiGatewayProxyResponse(false, HttpStatusCode.OK, gson.toJson(resp));
+        return new ApiGatewayProxyResponse(false, respHeaders, HttpStatusCode.OK, gson.toJson(resp));
     }
 }
